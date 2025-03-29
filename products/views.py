@@ -4,6 +4,7 @@ from .models import Products
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .utils import calculate_total
+from collections import Counter
 
 def product_list(request):
     # Renders the product list as an HTML page (for the template-based version)
@@ -55,6 +56,7 @@ def checkout_view(request):
                     product = Products.objects.get(product_code=code)
                     # Append the product name and quantity to the summary list
                     summary.append({
+                        "product_code": product.product_code,
                         "name": product.name,
                         "quantity": quantity
                     })

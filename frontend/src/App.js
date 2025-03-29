@@ -68,8 +68,8 @@ function App() {
         <>
           <h1>Checkout</h1>
           <ul>
-            {checkoutSummary.summary.map((item, index) => (
-              <li key={index}>
+            {checkoutSummary.summary.map((item) => (
+              <li key={item.product_code}>
                 {item.quantity} x {item.name}
               </li>
             ))}
