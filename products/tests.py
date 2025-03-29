@@ -1,6 +1,7 @@
 from django.test import TestCase
 from .models import Products
 from django.urls import reverse
+from .utils import calculate_total
 
 class ProductsModelTest(TestCase):
     def test_create_product(self):
@@ -39,3 +40,25 @@ class ProductsAPITest(TestCase):
         self.assertEqual(len(data), 2)
         self.assertEqual(data[0]['name'], "Coffee")
         self.assertEqual(data[1]['name'], "Strawberries")
+        
+class CalculateTotalTest(TestCase):
+    def setUp(self):
+        # Populate the test database with the three products
+        Products.objects.create(product_code="GR1", name="Green Tea", price=3.11)
+        Products.objects.create(product_code="SR1", name="Strawberries", price=5.00)
+        Products.objects.create(product_code="CF1", name="Coffee", price=11.23)
+
+    def test_checkout_scenario_1(self):
+        codes = ["GR1", "GR1"]
+        total = calculate_total(codes)
+        self.assertEqual(total, 3.11)  # buy-one-get-one-free
+
+    def test_checkout_scenario_2(self):
+        codes = ["SR1", "SR1", "GR1", "SR1"]
+        total = calculate_total(codes)
+        self.assertEqual(total, 16.61)  # 3 strawberries discounted + 1 tea
+
+    def test_checkout_scenario_3(self):
+        codes = ["GR1", "CF1", "SR1", "CF1", "CF1"]
+        total = calculate_total(codes)
+        self.assertEqual(total, 30.57)  # 3 coffees with discount, 1 strawberry, 1 tea
