@@ -1,4 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import './App.css';
+import { FaShoppingCart } from 'react-icons/fa'; 
+import greenTeaImg from './images/green-tea.jpg';
+import coffeeImg from './images/coffee.jpg';
+import strawberriesImg from './images/strawberry.jpg';
+import logo from './images/amenitiz-logo.png';
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -6,20 +12,23 @@ function App() {
   const [view, setView] = useState("catalog");
   const [checkoutSummary, setCheckoutSummary] = useState(null);
 
-  // Fetch products when component mounts
+  const productImages = {
+    GR1: greenTeaImg,
+    CF1: coffeeImg,
+    SR1: strawberriesImg
+  };
+
   useEffect(() => {
     fetch('http://localhost:8000/products/api/')
       .then(response => response.json())
       .then(data => setProducts(data))
-      .catch(error => console.error('Errore nella fetch:', error));
+      .catch(error => console.error('Error fetching products:', error));
   }, []);
 
-  // Add product code to cart
   const addToCart = (code) => {
     setCartItems([...cartItems, code]);
   };
 
-  // Remove the last occurrence of a product code from cart
   const removeFromCart = (code) => {
     const index = cartItems.lastIndexOf(code);
     if (index !== -1) {
@@ -29,7 +38,6 @@ function App() {
     }
   };
 
-  // Handle checkout button
   const handleCheckout = () => {
     fetch("http://localhost:8000/products/checkout/", {
       method: "POST",
@@ -41,42 +49,64 @@ function App() {
         setCheckoutSummary(data);
         setView("checkout");
       })
-      .catch(err => console.error("Errore nel checkout:", err));
+      .catch(err => console.error("Checkout error:", err));
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="container">
+      <header className="navbar">
+        <img src={logo} alt="Amenitiz Logo" className="logo" />
+      </header>
       {view === "catalog" && (
         <>
-          <h1>Prodotti disponibili</h1>
-          <ul>
+          <h2 className="centered-title">Products</h2>
+
+          <div className="product-grid">
             {products.map(product => (
-              <li key={product.product_code}>
-                <strong>{product.name}</strong> – {product.price.toFixed(2)} €
-                <button onClick={() => addToCart(product.product_code)}>+</button>
-                <button onClick={() => removeFromCart(product.product_code)}>-</button>
-              </li>
+              <div className="product-card" key={product.product_code}>
+                <img src={productImages[product.product_code]} alt={product.name} />
+                <h3>{product.name}</h3>
+                <p>{product.price.toFixed(2)} €</p>
+                <div className="buttons">
+                  <button onClick={() => addToCart(product.product_code)}>+</button>
+                  <button onClick={() => removeFromCart(product.product_code)}>-</button>
+                </div>
+                <div className="offer">
+                  {product.product_code === "GR1" && <p>Buy 1 Get 1 Free</p>}
+                  {product.product_code === "SR1" && <p>3+ for 4.50€</p>}
+                  {product.product_code === "CF1" && <p>3+ at 2/3 price</p>}
+                </div>
+              </div>
             ))}
-          </ul>
-          <button onClick={handleCheckout}>
-            Vai al Checkout ({cartItems.length} articoli)
-          </button>
+          </div>
+
+          <div className="cart-button-wrapper">
+            <button className="checkout-button" onClick={handleCheckout}>
+              <FaShoppingCart style={{ marginRight: '8px' }} />
+              {cartItems.length}
+              <span style={{ marginLeft: '6px' }}>Items</span>
+            </button>
+          </div>
         </>
       )}
 
       {view === "checkout" && checkoutSummary && (
-        <>
-          <h1>Checkout</h1>
-          <ul>
-            {checkoutSummary.summary.map((item) => (
-              <li key={item.product_code}>
-                {item.quantity} x {item.name}
-              </li>
-            ))}
-          </ul>
-          <p><strong>Totale:</strong> {checkoutSummary.total.toFixed(2)} €</p>
-          <button onClick={() => setView("catalog")}>Torna ai prodotti</button>
-        </>
+        <div className="checkout-wrapper">
+          <div className="checkout-items">
+            <h2>Checkout</h2>
+            <ul>
+              {checkoutSummary.summary.map((item) => (
+                <li key={item.product_code}>
+                  {item.quantity} x {item.name} = {item.subtotal.toFixed(2)} €
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="checkout-summary">
+            <h3>Total: {checkoutSummary.total.toFixed(2)} €</h3>
+            <button onClick={() => setView("catalog")}>Back to Products</button>
+          </div>
+        </div>
       )}
     </div>
   );

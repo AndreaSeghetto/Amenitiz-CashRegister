@@ -54,12 +54,27 @@ def checkout_view(request):
                 try:
                     # Retrieve the product details from the database
                     product = Products.objects.get(product_code=code)
-                    # Append the product name and quantity to the summary list
+
+                    # Calculate the individual subtotal with any applicable discount
+                    if code == "GR1":
+                        subtotal = float(product.price) * (quantity // 2 + quantity % 2)
+                    elif code == "SR1":
+                        price = 4.50 if quantity >= 3 else float(product.price)
+                        subtotal = price * quantity
+                    elif code == "CF1":
+                        price = float(product.price) * (2 / 3) if quantity >= 3 else float(product.price)
+                        subtotal = price * quantity
+                    else:
+                        subtotal = float(product.price) * quantity
+
+                    # Append the product summary including name, quantity, and subtotal
                     summary.append({
                         "product_code": product.product_code,
                         "name": product.name,
-                        "quantity": quantity
+                        "quantity": quantity,
+                        "subtotal": round(subtotal, 2)  # rounded for clarity
                     })
+
                 except Products.DoesNotExist:
                     # If a product code does not exist in the database, skip it
                     continue
