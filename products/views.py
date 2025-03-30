@@ -11,7 +11,6 @@ def product_list(request):
     products = Products.objects.all()
     return render(request, 'product_list.html', {'products': products})
 
-
 def products_api(request):
     # Returns all products as JSON (used by React frontend)
     products = Products.objects.all()
@@ -25,15 +24,13 @@ def products_api(request):
     ]
     return JsonResponse(data, safe=False)
 
-
 @csrf_exempt  # Temporarily exempt this view from CSRF verification for development purposes
 def checkout_view(request):
     """
     Handles the checkout process by calculating the total price and summarizing the items.
 
     Accepts a POST request containing a JSON payload with a list of product codes.
-    Returns a JSON response with the total price and a summary of items.
-
+    Returns a JSON response with the total price, a summary of items, and total savings.
     """
     if request.method == "POST":
         try:
@@ -49,39 +46,44 @@ def checkout_view(request):
             counts = Counter(product_codes)
 
             summary = []
+            total_savings = 0
+
             # Iterate over each unique product code and its corresponding quantity
             for code, quantity in counts.items():
                 try:
                     # Retrieve the product details from the database
                     product = Products.objects.get(product_code=code)
 
-                    # Calculate the individual subtotal with any applicable discount
-                    if code == "GR1":
-                        subtotal = float(product.price) * (quantity // 2 + quantity % 2)
-                    elif code == "SR1":
-                        price = 4.50 if quantity >= 3 else float(product.price)
-                        subtotal = price * quantity
-                    elif code == "CF1":
-                        price = float(product.price) * (2 / 3) if quantity >= 3 else float(product.price)
-                        subtotal = price * quantity
-                    else:
-                        subtotal = float(product.price) * quantity
+                    # Determine unit price and full (non-discounted) price
+                    unit_price = float(product.price)
+                    full_price = unit_price * quantity
 
-                    # Append the product summary including name, quantity, and subtotal
+                    # Calculate discounted subtotal using calculate_total
+                    subtotal = float(calculate_total([code] * quantity))
+
+                    # Calculate savings and accumulate total savings
+                    savings = round(full_price - subtotal, 2)
+                    total_savings += savings if savings > 0 else 0
+
+                    # Append the product summary with discount information if applicable
                     summary.append({
                         "product_code": product.product_code,
                         "name": product.name,
                         "quantity": quantity,
-                        "subtotal": round(subtotal, 2)  # rounded for clarity
+                        "unit_price": round(unit_price, 2),
+                        "full_price": round(full_price, 2),
+                        "subtotal": round(subtotal, 2),
+                        "savings": savings if savings > 0 else 0
                     })
 
                 except Products.DoesNotExist:
                     # If a product code does not exist in the database, skip it
                     continue
 
-            # Construct the response data with the total price and item summary
+            # Construct the response data with the total price, item summary, and total savings
             response_data = {
                 "total": total,
+                "total_savings": round(total_savings, 2),
                 "summary": summary
             }
             return JsonResponse(response_data)
@@ -92,4 +94,5 @@ def checkout_view(request):
     else:
         # Return an error response if the request method is not POST
         return JsonResponse({"error": "Only POST method allowed"}, status=405)
+
 

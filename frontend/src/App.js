@@ -91,9 +91,9 @@ function App() {
       )}
 
       {view === "checkout" && checkoutSummary && (
-        <div className="checkout-wrapper">
-          <div className="checkout-items">
-            <h2>Checkout</h2>
+        <div className="checkout-container">
+          <div className="checkout-summary">
+            <h2 className="centered-title">Summary</h2>
             <ul>
               {checkoutSummary.summary.map((item) => (
                 <li key={item.product_code}>
@@ -101,10 +101,27 @@ function App() {
                 </li>
               ))}
             </ul>
+            {checkoutSummary.total_savings > 0 && (
+              <h3 className="savings">Savings: {checkoutSummary.total_savings.toFixed(2)} €</h3>
+            )}
+            <h3 className="total">Total: {checkoutSummary.total.toFixed(2)} €</h3>
+            <button className="back-button" onClick={() => setView("catalog")}>Back to Products</button>
           </div>
-          <div className="checkout-summary">
-            <h3>Total: {checkoutSummary.total.toFixed(2)} €</h3>
-            <button onClick={() => setView("catalog")}>Back to Products</button>
+          <div className="checkout-images">
+            {checkoutSummary.summary.map((item) => (
+              <div className="checkout-card" key={item.product_code}>
+                <img src={productImages[item.product_code]} alt={item.name} />
+                <div className="item-info">
+                  <span><strong>{item.name}</strong></span>
+                  <span>Qty: {item.quantity}</span>
+                  <span>Unit: {item.unit_price.toFixed(2)} €</span>
+                  <span><strong>{item.subtotal.toFixed(2)} €</strong></span>
+                  {item.savings > 0 && (
+                    <span> <strong> {item.savings.toFixed(2)} € saved </strong> </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
